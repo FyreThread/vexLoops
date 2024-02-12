@@ -43,4 +43,7 @@ void driveStraightUntil(double targetDistance) {
         // Wait for a short duration before the next iteration
         wait(10, msec);
     }
+    
+    // After breaking out of the loop, release control of the drivetrain
+    Drivetrain.stop();
 }
