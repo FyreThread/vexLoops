@@ -1,1 +1,107 @@
+void turnLeftDegrees(double targetDegrees) {
+  double kP = 0.1;
+  int deadzone = 2;
+  double minMotorSpeed = 5.0;
 
+  double initialHeading = Drivetrain.heading();
+  double targetHeading = initialHeading - targetDegrees;
+
+  // Ensure targetHeading is within the range [0, 360)
+  if (targetHeading < 0) {
+    targetHeading += 360.0;
+  } else if (targetHeading >= 360.0) {
+    targetHeading -= 360.0;
+  }
+
+  while (true) {
+    double currentHeading = Drivetrain.heading();
+    double error = targetHeading - currentHeading;
+    
+    if (error < -180.0) {
+      error += 360.0;
+    } else if (error >= 180.0) {
+      error -= 360.0;
+    }
+
+    if (fabs(error) < deadzone) {
+      error = 0.0;
+    }
+    
+    double motorSpeed = error * kP;
+    motorSpeed *= fabs(error / targetDegrees);
+
+    if (fabs(motorSpeed) < minMotorSpeed) {
+      motorSpeed = copysign(minMotorSpeed, motorSpeed);
+    }
+
+    LeftDriveSmart.setVelocity(motorSpeed, percent);
+    RightDriveSmart.setVelocity(-motorSpeed, percent);
+
+    LeftDriveSmart.spin(forward);
+    RightDriveSmart.spin(forward);
+
+    if (fabs(error) < 2.0) {
+      Drivetrain.setDriveVelocity(150.0, percent);
+      Drivetrain.stop();
+      break;
+    }
+    
+    wait(5, msec);
+  }
+
+  Drivetrain.stop();
+}
+
+void turnRightDegrees(double targetDegrees) {
+  double kP = 0.1;
+  int deadzone = 2;
+  double minMotorSpeed = 5.0;
+
+  double initialHeading = Drivetrain.heading();
+  double targetHeading = initialHeading + targetDegrees;
+
+  // Ensure targetHeading is within the range [0, 360)
+  if (targetHeading < 0) {
+    targetHeading += 360.0;
+  } else if (targetHeading >= 360.0) {
+    targetHeading -= 360.0;
+  }
+
+  while (true) {
+    double currentHeading = Drivetrain.heading();
+    double error = targetHeading - currentHeading;
+    
+    if (error < -180.0) {
+      error += 360.0;
+    } else if (error >= 180.0) {
+      error -= 360.0;
+    }
+
+    if (fabs(error) < deadzone) {
+      error = 0.0;
+    }
+    
+    double motorSpeed = error * kP;
+    motorSpeed *= fabs(error / targetDegrees);
+
+    if (fabs(motorSpeed) < minMotorSpeed) {
+      motorSpeed = copysign(minMotorSpeed, motorSpeed);
+    }
+
+    LeftDriveSmart.setVelocity(motorSpeed, percent);
+    RightDriveSmart.setVelocity(-motorSpeed, percent);
+
+    LeftDriveSmart.spin(forward);
+    RightDriveSmart.spin(forward);
+
+    if (fabs(error) < 2.0) {
+      Drivetrain.stop();
+      Drivetrain.setDriveVelocity(150.0, percent);
+      break;
+    }
+    
+    wait(5, msec);
+  }
+
+  Drivetrain.stop();
+}
