@@ -1,7 +1,5 @@
-To make the robot drift to a specific heading while maintaining the lateral movement, we'll adjust the motor speeds based on the difference between the current heading and the target heading. Here's the updated function:
-
-```cpp
-void driftToHeading(double driftingSpeed, double distance, double targetHeading) {
+// Function to make the robot drift to a set heading
+void driftToHeading(double driftingSpeed, double distance, double targetHeading, bool driftRight) {
     // Set the drive velocity
     Drivetrain.setDriveVelocity(driftingSpeed, percent);
 
@@ -29,9 +27,19 @@ void driftToHeading(double driftingSpeed, double distance, double targetHeading)
             break;
         }
 
-        // Adjust motor speeds based on the error
-        double leftVelocity = driftingSpeed + error * 0.05; // Adjust proportionally to the error
-        double rightVelocity = driftingSpeed - error * 0.05; // Adjust proportionally to the error
+        // Adjust motor speeds based on the error and drift direction
+        double leftVelocity, rightVelocity;
+        if (driftRight) {
+            leftVelocity = driftingSpeed + error * 0.05;
+            rightVelocity = driftingSpeed - error * 0.05;
+        } else {
+            leftVelocity = driftingSpeed - error * 0.05;
+            rightVelocity = driftingSpeed + error * 0.05;
+        }
+
+        // Ensure motor speeds don't go negative
+        if (leftVelocity < 0) leftVelocity = 0;
+        if (rightVelocity < 0) rightVelocity = 0;
 
         // Set the motor velocities
         LeftDriveSmart.setVelocity(leftVelocity, percent);
@@ -45,12 +53,3 @@ void driftToHeading(double driftingSpeed, double distance, double targetHeading)
         wait(5, msec);
     }
 }
-```
-
-In this version:
-- The function takes `driftingSpeed`, `distance`, and `targetHeading` as parameters.
-- It adjusts the motor speeds based on the difference between the current heading and the target heading.
-- The robot will drift laterally while correcting its heading towards the target heading.
-- Once the robot reaches the target heading within a certain threshold, it stops drifting.
-
-You can call this function with the desired drifting speed, distance, and target heading to make the robot drift while aligning its heading with the target heading. Adjust the proportional factor (`0.05`) as needed to fine-tune the behavior for your robot.
