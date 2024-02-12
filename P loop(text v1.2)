@@ -1,26 +1,27 @@
-// Left P Loop 
 void turnLeftDegrees(double targetDegrees) {
   // Proportional gain (adjust as needed)
-  double kP = 0.55;//55
+  double kP = 0.43; // Adjust as needed
 
   // Dead zone for the controller (adjust as needed)
   int deadzone = 2;
 
-  // Calculate target heading
-  double targetHeading = Drivetrain.heading() - targetDegrees;
+  // Threshold for considering target heading reached
+  double headingThreshold = 1.0;
 
-  // Ensure targetHeading is within the range [0, 360)
-  if (targetHeading < 0) {
-    targetHeading += 360.0;
-  } else if (targetHeading >= 360.0) {
-    targetHeading -= 360.0;
-  }
+  // Reset rotation before turning
+  Drivetrain.resetRotation();
+
+  // Calculate target heading
+  double targetHeading = -targetDegrees;
 
   // Turn left until the target heading is reached
   while (true) {
+    // Calculate current heading
+    double currentHeading = -Drivetrain.rotation(degrees);
+
     // Calculate error
-    double error = targetHeading - Drivetrain.heading();
-    
+    double error = targetHeading - currentHeading;
+
     // Ensure error is within the range [-180, 180)
     if (error < -180.0) {
       error += 360.0;
@@ -32,27 +33,23 @@ void turnLeftDegrees(double targetDegrees) {
     if (fabs(error) < deadzone) {
       error = 0.0;
     }
-    
+
     // Calculate motor speed based on error
     double motorSpeed = error * kP;
 
-    // Decrease motor speed as error decreases
-    motorSpeed *= fabs(error / targetDegrees);
-
     // Set the motor speeds for left turn
-    double baseSpeed = 50.0; // Adjust as needed
-    LeftDriveSmart.setVelocity(baseSpeed + fabs(motorSpeed), percent); // Increase speed
-    RightDriveSmart.setVelocity(-(baseSpeed + fabs(motorSpeed)), percent); // Reverse the direction and increase speed
+    LeftDriveSmart.setVelocity(motorSpeed, percent);
+    RightDriveSmart.setVelocity(-motorSpeed, percent); // Reverse the direction
 
     // Spin the motors for left turn
     LeftDriveSmart.spin(forward);
     RightDriveSmart.spin(forward);
 
     // Break the loop if the target heading is reached
-    if (fabs(error) < 2.0) {
+    if (fabs(error) < headingThreshold) {
       break;
     }
-    
+
     // Wait for a short duration
     wait(5, msec);
   }
@@ -61,29 +58,30 @@ void turnLeftDegrees(double targetDegrees) {
   Drivetrain.stop();
 }
 
-//Right P loop
 void turnRightDegrees(double targetDegrees) {
   // Proportional gain (adjust as needed)
-  double kP = 0.55;//55
+  double kP = 0.43; // Adjust as needed
 
   // Dead zone for the controller (adjust as needed)
   int deadzone = 2;
 
-  // Calculate target heading
-  double targetHeading = Drivetrain.heading() + targetDegrees;
+  // Threshold for considering target heading reached
+  double headingThreshold = 1.0;
 
-  // Ensure targetHeading is within the range [0, 360)
-  if (targetHeading < 0) {
-    targetHeading += 360.0;
-  } else if (targetHeading >= 360.0) {
-    targetHeading -= 360.0;
-  }
+  // Reset rotation before turning
+  Drivetrain.resetRotation();
+
+  // Calculate target heading
+  double targetHeading = targetDegrees;
 
   // Turn right until the target heading is reached
   while (true) {
+    // Calculate current heading
+    double currentHeading = Drivetrain.rotation(degrees);
+
     // Calculate error
-    double error = targetHeading - Drivetrain.heading();
-    
+    double error = targetHeading - currentHeading;
+
     // Ensure error is within the range [-180, 180)
     if (error < -180.0) {
       error += 360.0;
@@ -95,27 +93,23 @@ void turnRightDegrees(double targetDegrees) {
     if (fabs(error) < deadzone) {
       error = 0.0;
     }
-    
+
     // Calculate motor speed based on error
     double motorSpeed = error * kP;
 
-    // Decrease motor speed as error decreases
-    motorSpeed *= fabs(error / targetDegrees);
-
     // Set the motor speeds for right turn
-    double baseSpeed = 50.0; // Adjust as needed
-    LeftDriveSmart.setVelocity(-(baseSpeed + fabs(motorSpeed)), percent); // Reverse the direction and increase speed
-    RightDriveSmart.setVelocity(baseSpeed + fabs(motorSpeed), percent); // Increase speed
+    LeftDriveSmart.setVelocity(-motorSpeed, percent);
+    RightDriveSmart.setVelocity(motorSpeed, percent); // Reverse the direction
 
     // Spin the motors for right turn
     LeftDriveSmart.spin(forward);
     RightDriveSmart.spin(forward);
 
     // Break the loop if the target heading is reached
-    if (fabs(error) < 2.0) {
+    if (fabs(error) < headingThreshold) {
       break;
     }
-    
+
     // Wait for a short duration
     wait(5, msec);
   }
