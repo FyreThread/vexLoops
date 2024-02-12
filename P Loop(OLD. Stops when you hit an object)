@@ -2,11 +2,14 @@ float ActualHeading, TargetHeading, error, MotorSpeed;
 
 // Left P Loop 
 void turnLeftDegrees(double targetDegrees) {
-  // Proportional gain (Turn to much, make smaller, Turn to little, make biger)
+  // Proportional gain (Turn to much, make smaller, Turn to little, make bigger)
   double kP = 0.1;//432
 
   // Dead zone for the loop
-  int deadzone = 4;
+  int deadzone = 2;
+
+  //The slowist speed the Loop start with.
+  double minMotorSpeed = 5.0;
 
   //sets Heading to 0.0 before everyturn(DO NOT USE THIS WITH A PID IT WILL BRAKE)
   Drivetrain.setHeading(0.0, degrees);
@@ -44,6 +47,10 @@ void turnLeftDegrees(double targetDegrees) {
     // Decrease motor speed as error decreases
     motorSpeed *= fabs(error / targetDegrees);
 
+  if (fabs(motorSpeed) < minMotorSpeed) {
+    motorSpeed = copysign(minMotorSpeed, motorSpeed);
+  }
+
     // Set the motor speeds for left turn
     LeftDriveSmart.setVelocity(motorSpeed, percent);
     RightDriveSmart.setVelocity(-motorSpeed, percent); // Reverse the direction
@@ -69,11 +76,14 @@ void turnLeftDegrees(double targetDegrees) {
 
 //Right P loop
 void turnRightDegrees(double targetDegrees) {
-  // Proportional gain (Turn to much, make smaller, Turn to little, make biger)
+  // Proportional gain (Turn to much, make smaller, Turn to little, make bigger)
   double kP = 0.1;//432
 
   // Dead zone for the Loop
-  int deadzone = 4;
+  int deadzone = 2;
+
+  //The slowist speed the loop will start with  
+  double minMotorSpeed = 5.0;
 
   //sets Heading to 0.0 before everyturn(DO NOT USE THIS WITH A PID IT WILL BRAKE EVERYTHING)
   Drivetrain.setHeading(0.0, degrees);
@@ -110,6 +120,10 @@ void turnRightDegrees(double targetDegrees) {
 
     // Decrease motor speed as error decreases
     motorSpeed *= fabs(error / targetDegrees);
+
+   if (fabs(motorSpeed) < minMotorSpeed) {
+     motorSpeed = copysign(minMotorSpeed, motorSpeed);
+    }
 
     // Set the motor speeds for right turn
     LeftDriveSmart.setVelocity(motorSpeed, percent);
