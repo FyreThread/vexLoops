@@ -1,4 +1,4 @@
-void drift(double driftingSpeed, double distance, double targetHeading) {
+void drift(double driftingSpeed, double distance, bool driftLeft) {
     // Set the drive velocity
     Drivetrain.setDriveVelocity(driftingSpeed, percent);
 
@@ -6,39 +6,11 @@ void drift(double driftingSpeed, double distance, double targetHeading) {
     double targetDegrees = distance / (3.14159 * 4) * 360.0; // Assuming the wheel diameter is 4 inches
 
     // Perform the drift until the target distance is reached
-    while (true) {
-        // Calculate the current heading
-        double currentHeading = Drivetrain.heading();
-
-        // Calculate the error between the current heading and the target heading
-        double error = targetHeading - currentHeading;
-
-        // Ensure the error is within the range [-180, 180)
-        if (error < -180.0) {
-            error += 360.0;
-        } else if (error >= 180.0) {
-            error -= 360.0;
-        }
-
-        // If the error is within a certain threshold, stop the drift
-        if (fabs(error) < 2.0) {
-            Drivetrain.stop();
-            break;
-        }
-
-        // Calculate motor speeds based on error
-        double leftMotorSpeed = driftingSpeed + error * 0.05; // Adjust proportionally to the error
-        double rightMotorSpeed = driftingSpeed - error * 0.05; // Adjust proportionally to the error
-
-        // Set the motor velocities
-        LeftDriveSmart.setVelocity(leftMotorSpeed, percent);
-        RightDriveSmart.setVelocity(rightMotorSpeed, percent);
-
-        // Spin the motors for the drift
-        LeftDriveSmart.spin(forward);
-        RightDriveSmart.spin(forward);
-
-        // Wait for a short duration before checking again
-        wait(5, msec);
+    if (driftLeft) {
+        LeftDriveSmart.spinFor(reverse, targetDegrees, degrees, false);
+        RightDriveSmart.spinFor(forward, targetDegrees, degrees, false);
+    } else {
+        LeftDriveSmart.spinFor(forward, targetDegrees, degrees, false);
+        RightDriveSmart.spinFor(reverse, targetDegrees, degrees, false);
     }
 }
