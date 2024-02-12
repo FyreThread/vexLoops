@@ -2,13 +2,23 @@ void driveStraightUntil(double targetDistance) {
     double kP = 0.1; // Proportional gain
     double minMotorSpeed = 20.0; // Minimum motor speed
     double maxMotorSpeed = 50.0; // Maximum motor speed
-    double distanceError;
+    double initialHeading = DrivetrainInertial.heading(vex::rotationUnits::deg); // Initial heading
     
-    Drivetrain.driveFor(targetDistance, inches, false); // Drive forward for target distance
+    // Drive forward
+    Drivetrain.driveFor(targetDistance, vex::distanceUnits::in, false);
     
     while (true) {
+        // Calculate current heading
+        double currentHeading = DrivetrainInertial.heading(vex::rotationUnits::deg);
+        
+        // Calculate change in heading
+        double headingChange = currentHeading - initialHeading;
+        
+        // Estimate distance traveled based on heading change
+        double distanceTraveled = (headingChange / 360.0) * (3.14 * wheelDiameter); // Assuming wheelDiameter is defined
+        
         // Calculate distance error
-        distanceError = targetDistance - Drivetrain.distance(inches);
+        double distanceError = targetDistance - distanceTraveled;
         
         // Adjust motor speed based on distance error
         double motorSpeed = kP * distanceError;
@@ -19,12 +29,8 @@ void driveStraightUntil(double targetDistance) {
         }
         
         // Set motor speeds
-        LeftDriveSmart.setVelocity(motorSpeed, percent);
-        RightDriveSmart.setVelocity(motorSpeed, percent);
-        
-        // Move the robot
-        LeftDriveSmart.spin(forward);
-        RightDriveSmart.spin(forward);
+        LeftDriveSmart.setVelocity(motorSpeed, vex::velocityUnits::pct);
+        RightDriveSmart.setVelocity(motorSpeed, vex::velocityUnits::pct);
         
         // Check if the target distance is reached
         if (fabs(distanceError) < 0.1) {
