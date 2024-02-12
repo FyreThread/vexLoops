@@ -1,15 +1,56 @@
-void drift(double driftingSpeed, double distance, bool driftLeft) {
+To make the robot drift to a specific heading while maintaining the lateral movement, we'll adjust the motor speeds based on the difference between the current heading and the target heading. Here's the updated function:
+
+```cpp
+void driftToHeading(double driftingSpeed, double distance, double targetHeading) {
     // Set the drive velocity
     Drivetrain.setDriveVelocity(driftingSpeed, percent);
 
     // Convert distance to degrees for the drivetrain
     double targetDegrees = distance / (3.14159 * 4) * 360.0; // Assuming the wheel diameter is 4 inches
 
-    // Calculate adjusted velocities for left and right motors
-    double leftVelocity = driftLeft ? driftingSpeed * 0.8 : driftingSpeed; // Adjust left motor speed
-    double rightVelocity = driftLeft ? driftingSpeed : driftingSpeed * 0.8; // Adjust right motor speed
-
     // Perform the drift until the target distance is reached
-    LeftDriveSmart.spinFor(forward, targetDegrees, degrees, false).velocity(leftVelocity, percent);
-    RightDriveSmart.spinFor(forward, targetDegrees, degrees, false).velocity(rightVelocity, percent);
+    while (true) {
+        // Calculate the current heading
+        double currentHeading = Drivetrain.heading();
+
+        // Calculate the error between the current heading and the target heading
+        double error = targetHeading - currentHeading;
+
+        // Ensure the error is within the range [-180, 180)
+        if (error < -180.0) {
+            error += 360.0;
+        } else if (error >= 180.0) {
+            error -= 360.0;
+        }
+
+        // If the error is within a certain threshold, stop the drift
+        if (fabs(error) < 2.0) {
+            Drivetrain.stop();
+            break;
+        }
+
+        // Adjust motor speeds based on the error
+        double leftVelocity = driftingSpeed + error * 0.05; // Adjust proportionally to the error
+        double rightVelocity = driftingSpeed - error * 0.05; // Adjust proportionally to the error
+
+        // Set the motor velocities
+        LeftDriveSmart.setVelocity(leftVelocity, percent);
+        RightDriveSmart.setVelocity(rightVelocity, percent);
+
+        // Spin the motors for the drift
+        LeftDriveSmart.spin(forward);
+        RightDriveSmart.spin(forward);
+
+        // Wait for a short duration before checking again
+        wait(5, msec);
+    }
 }
+```
+
+In this version:
+- The function takes `driftingSpeed`, `distance`, and `targetHeading` as parameters.
+- It adjusts the motor speeds based on the difference between the current heading and the target heading.
+- The robot will drift laterally while correcting its heading towards the target heading.
+- Once the robot reaches the target heading within a certain threshold, it stops drifting.
+
+You can call this function with the desired drifting speed, distance, and target heading to make the robot drift while aligning its heading with the target heading. Adjust the proportional factor (`0.05`) as needed to fine-tune the behavior for your robot.
