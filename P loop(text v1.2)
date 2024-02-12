@@ -4,6 +4,7 @@ void turnLeftDegrees(double targetDegrees) {
   double minMotorSpeed = 5.0;
 
   double initialHeading = Drivetrain.heading();
+  double currentHeading = initialHeading;
   double targetHeading = initialHeading - targetDegrees;
 
   // Ensure targetHeading is within the range [0, 360)
@@ -14,7 +15,6 @@ void turnLeftDegrees(double targetDegrees) {
   }
 
   while (true) {
-    double currentHeading = Drivetrain.heading();
     double error = targetHeading - currentHeading;
     
     if (error < -180.0) {
@@ -39,6 +39,8 @@ void turnLeftDegrees(double targetDegrees) {
 
     LeftDriveSmart.spin(forward);
     RightDriveSmart.spin(forward);
+
+    currentHeading = Drivetrain.heading();
 
     if (fabs(error) < 2.0) {
       Drivetrain.setDriveVelocity(150.0, percent);
@@ -58,6 +60,7 @@ void turnRightDegrees(double targetDegrees) {
   double minMotorSpeed = 5.0;
 
   double initialHeading = Drivetrain.heading();
+  double currentHeading = initialHeading;
   double targetHeading = initialHeading + targetDegrees;
 
   // Ensure targetHeading is within the range [0, 360)
@@ -68,7 +71,6 @@ void turnRightDegrees(double targetDegrees) {
   }
 
   while (true) {
-    double currentHeading = Drivetrain.heading();
     double error = targetHeading - currentHeading;
     
     if (error < -180.0) {
@@ -93,6 +95,8 @@ void turnRightDegrees(double targetDegrees) {
 
     LeftDriveSmart.spin(forward);
     RightDriveSmart.spin(forward);
+
+    currentHeading = Drivetrain.heading();
 
     if (fabs(error) < 2.0) {
       Drivetrain.stop();
