@@ -2,7 +2,8 @@ void driveStraightUntil(double targetDistance) {
     double kP = 0.1; // Proportional gain
     double minMotorSpeed = 20.0; // Minimum motor speed
     double maxMotorSpeed = 50.0; // Maximum motor speed
-    double deadZone = 0.5; // Dead zone around the target distance
+    double positiveDeadZone = 0.1; // Positive dead zone around the target distance
+    double negativeDeadZone = -0.1; // Negative dead zone around the target distance
     double initialHeading = DrivetrainInertial.heading(vex::rotationUnits::deg); // Initial heading
     
     // Drive forward
@@ -22,7 +23,7 @@ void driveStraightUntil(double targetDistance) {
         double distanceError = targetDistance - distanceTraveled;
         
         // Check if within the dead zone
-        if (fabs(distanceError) < deadZone) {
+        if (distanceError > negativeDeadZone && distanceError < positiveDeadZone) {
             // Stop the robot and break out of the loop
             break;
         }
