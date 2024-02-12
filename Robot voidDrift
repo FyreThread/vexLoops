@@ -24,7 +24,6 @@ void driveStraightUntil(double targetDistance) {
         // Check if within the dead zone
         if (fabs(distanceError) < deadZone) {
             // Stop the robot and break out of the loop
-            Drivetrain.stop();
             break;
         }
         
@@ -44,6 +43,6 @@ void driveStraightUntil(double targetDistance) {
         wait(10, msec);
     }
     
-    // After breaking out of the loop, release control of the drivetrain
+    // After breaking out of the loop, stop the motors and release control of the drivetrain
     Drivetrain.stop();
 }
