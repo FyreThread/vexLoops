@@ -1,13 +1,15 @@
 float ActualHeading, TargetHeading, error, MotorSpeed;
 
-
 // Left P Loop 
 void turnLeftDegrees(double targetDegrees) {
-  // Proportional gain (adjust as needed)
-  double kP = 0.55;//55
+  // Proportional gain (Turn to much, make smaller, Turn to little, make biger)
+  double kP = 0.1;//432
 
-  // Dead zone for the controller (adjust as needed)
-  int deadzone = 2;
+  // Dead zone for the loop
+  int deadzone = 4;
+
+  //sets Heading to 0.0 before everyturn(DO NOT USE THIS WITH A PID IT WILL BRAKE)
+  Drivetrain.setHeading(0.0, degrees);
 
   // Calculate target heading
   double targetHeading = Drivetrain.heading() - targetDegrees;
@@ -52,6 +54,8 @@ void turnLeftDegrees(double targetDegrees) {
 
     // Break the loop if the target heading is reached
     if (fabs(error) < 2.0) {
+      Drivetrain.setDriveVelocity(150.0, percent);
+      Drivetrain.stop();
       break;
     }
     
@@ -65,11 +69,14 @@ void turnLeftDegrees(double targetDegrees) {
 
 //Right P loop
 void turnRightDegrees(double targetDegrees) {
-  // Proportional gain (adjust as needed)
-  double kP = 0.55;//55
+  // Proportional gain (Turn to much, make smaller, Turn to little, make biger)
+  double kP = 0.1;//432
 
-  // Dead zone for the controller (adjust as needed)
-  int deadzone = 2;
+  // Dead zone for the Loop
+  int deadzone = 4;
+
+  //sets Heading to 0.0 before everyturn(DO NOT USE THIS WITH A PID IT WILL BRAKE EVERYTHING)
+  Drivetrain.setHeading(0.0, degrees);
 
   // Calculate target heading
   double targetHeading = Drivetrain.heading() + targetDegrees;
@@ -114,6 +121,8 @@ void turnRightDegrees(double targetDegrees) {
 
     // Break the loop if the target heading is reached
     if (fabs(error) < 2.0) {
+      Drivetrain.stop();
+      Drivetrain.setDriveVelocity(150.0, percent);
       break;
     }
     
