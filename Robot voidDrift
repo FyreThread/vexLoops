@@ -5,12 +5,11 @@ void drift(double driftingSpeed, double distance, bool driftLeft) {
     // Convert distance to degrees for the drivetrain
     double targetDegrees = distance / (3.14159 * 4) * 360.0; // Assuming the wheel diameter is 4 inches
 
+    // Calculate adjusted velocities for left and right motors
+    double leftVelocity = driftLeft ? driftingSpeed * 0.8 : driftingSpeed; // Adjust left motor speed
+    double rightVelocity = driftLeft ? driftingSpeed : driftingSpeed * 0.8; // Adjust right motor speed
+
     // Perform the drift until the target distance is reached
-    if (driftLeft) {
-        LeftDriveSmart.spinFor(reverse, targetDegrees, degrees, false);
-        RightDriveSmart.spinFor(forward, targetDegrees, degrees, false);
-    } else {
-        LeftDriveSmart.spinFor(forward, targetDegrees, degrees, false);
-        RightDriveSmart.spinFor(reverse, targetDegrees, degrees, false);
-    }
+    LeftDriveSmart.spinFor(forward, targetDegrees, degrees, false).velocity(leftVelocity, percent);
+    RightDriveSmart.spinFor(forward, targetDegrees, degrees, false).velocity(rightVelocity, percent);
 }
