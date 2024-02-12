@@ -1,50 +1,39 @@
-void driveStraightDistance(double targetDistance) {
-    double minMotorSpeed = 20.0; // Minimum motor speed
-    double maxMotorSpeed = 50.0; // Maximum motor speed
-    double deadzone = 0.5; // Dead zone around the target distance
-    double initialHeading = DrivetrainInertial.heading(vex::rotationUnits::deg); // Initial heading
-    
-    // Drive forward
-    Drivetrain.driveFor(targetDistance, vex::distanceUnits::in, false);
-    
-    while (true) {
-        // Calculate current heading
-        double currentHeading = DrivetrainInertial.heading(vex::rotationUnits::deg);
-        
-        // Calculate change in heading
-        double headingChange = currentHeading - initialHeading;
-        
-        // Estimate distance traveled based on heading change
-        double distanceTraveled = (headingChange / 360.0) * (3.14 * wheelDiameter); // Assuming wheelDiameter is defined
-        
-        // Calculate remaining distance
-        double remainingDistance = targetDistance - distanceTraveled;
-        
-        // Check if within the dead zone
-        if (fabs(remainingDistance) < deadzone) {
-            // Stop the robot and break out of the loop
-            Drivetrain.stop();
-            break;
+void driveStraightFor(double travelDist) {
+    double deadzone = .95;                                  // Deadzone value between 0 and 1
+    double kP = .1;                                         // Adjust later, changes degrees of error to a decimal
+    double mod = 2;                                         // Adjust later, keeps drivetrain at reasonable speed
+    DrivetrainInertial.setHeading(90, degrees);             // Prevents rolling over to 359
+    double CurrentVelocity = Drivetrain.velocity(percent);
+    Drivetrain.driveFor(travelDist, inches, false);
+    while(!Drivetrain.isDone()){
+        if (DrivetrainInertial.heading(degrees) > (90 * deadzone))
+        {
+            drivetrainLeftSideSpeed = (((DrivetrainInertial.heading(degrees) - 90) * kP) * mod);                  // (93 - 90) * .1 = .3 * 2 = .6         // .6 * 100 = 60
+            LeftDriveSmart.setVelocity(drivetrainLeftSideSpeed, percent);
+            std::cout << "Left Speed: " << LeftDriveSmart.velocity(percent) << std::endl;
         }
-        
-        // Calculate motor speed based on remaining distance
-        double motorSpeed = maxMotorSpeed * (remainingDistance / targetDistance);
-        
-        // Ensure motor speed stays within bounds
-        if (motorSpeed < minMotorSpeed) {
-            motorSpeed = minMotorSpeed;
-        } else if (motorSpeed > maxMotorSpeed) {
-            motorSpeed = maxMotorSpeed;
+        else if (DrivetrainInertial.heading(degrees) < (90 * deadzone))
+        {
+            drivetrainRightSideSpeed = (((90 - DrivetrainInertial.heading(degrees)) * kP) * mod);                  // (93 - 90) * .1 = .3 * 2 = .6         // .6 * 100 = 60
+            RightDriveSmart.setVelocity(drivetrainRightSideSpeed, percent);
+            std::cout << "Right Speed: " << RightDriveSmart.velocity(percent) << std::endl;
         }
-        
-        // Set motor speeds for driving straight
-        LeftDriveSmart.setVelocity(motorSpeed, vex::velocityUnits::pct);
-        RightDriveSmart.setVelocity(motorSpeed, vex::velocityUnits::pct);
-        
-        // Wait for a short duration before the next iteration
-        wait(10, msec);
+        else{
+            LeftDriveSmart.setVelocity(CurrentVelocity, percent);
+            RightDriveSmart.setVelocity(CurrentVelocity, percent);
+        }
+        this_thread::sleep_for(10);
     }
     
-    // After breaking out of the loop, stop the motors and release control of the drivetrain
-    Drivetrain.stop();
+}
+
+int main() {   
+    while(1) {
+        LeftDriveSmart.setVelocity(drivetrainLeftSideSpeed, percent);
+        LeftDriveSmart.spin(forward);
+        RightDriveSmart.setVelocity(drivetrainRightSideSpeed, percent);
+        RightDriveSmart.spin(forward);
+        std::cout << "Heading: " << DrivetrainInertial.heading(degrees) << "Right Speed: " << drivetrainRightSideSpeed << "\n";
+        this_thread::sleep_for(10);
+    }
 }
