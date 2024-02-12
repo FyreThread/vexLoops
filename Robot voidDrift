@@ -1,55 +1,39 @@
-// Function to make the robot drift to a set heading
-void driftToHeading(double driftingSpeed, double distance, double targetHeading, bool driftRight) {
-    // Set the drive velocity
-    Drivetrain.setDriveVelocity(driftingSpeed, percent);
-
-    // Convert distance to degrees for the drivetrain
-    double targetDegrees = distance / (3.14159 * 4) * 360.0; // Assuming the wheel diameter is 4 inches
-
-    // Perform the drift until the target distance is reached
+void driveStraightUntil(double targetDistance) {
+    double kP = 0.1; // Proportional gain
+    double minMotorSpeed = 20.0; // Minimum motor speed
+    double maxMotorSpeed = 50.0; // Maximum motor speed
+    double distanceError;
+    
+    Drivetrain.driveFor(targetDistance, inches, false); // Drive forward for target distance
+    
     while (true) {
-        // Calculate the current heading
-        double currentHeading = Drivetrain.heading();
-
-        // Calculate the error between the current heading and the target heading
-        double error = targetHeading - currentHeading;
-
-        // Ensure the error is within the range [-180, 180)
-        if (error < -180.0) {
-            error += 360.0;
-        } else if (error >= 180.0) {
-            error -= 360.0;
+        // Calculate distance error
+        distanceError = targetDistance - Drivetrain.distance(inches);
+        
+        // Adjust motor speed based on distance error
+        double motorSpeed = kP * distanceError;
+        if (motorSpeed < minMotorSpeed) {
+            motorSpeed = minMotorSpeed;
+        } else if (motorSpeed > maxMotorSpeed) {
+            motorSpeed = maxMotorSpeed;
         }
-
-        // If the error is within a certain threshold, stop the drift
-        if (fabs(error) < 2.0) {
+        
+        // Set motor speeds
+        LeftDriveSmart.setVelocity(motorSpeed, percent);
+        RightDriveSmart.setVelocity(motorSpeed, percent);
+        
+        // Move the robot
+        LeftDriveSmart.spin(forward);
+        RightDriveSmart.spin(forward);
+        
+        // Check if the target distance is reached
+        if (fabs(distanceError) < 0.1) {
+            // Stop the robot and break out of the loop
             Drivetrain.stop();
             break;
         }
-
-        // Adjust motor speeds based on the error and drift direction
-        double leftVelocity, rightVelocity;
-        if (driftRight) {
-            leftVelocity = driftingSpeed + error * 0.05;
-            rightVelocity = driftingSpeed - error * 0.05;
-        } else {
-            leftVelocity = driftingSpeed - error * 0.05;
-            rightVelocity = driftingSpeed + error * 0.05;
-        }
-
-        // Ensure motor speeds don't go negative
-        if (leftVelocity < 0) leftVelocity = 0;
-        if (rightVelocity < 0) rightVelocity = 0;
-
-        // Set the motor velocities
-        LeftDriveSmart.setVelocity(leftVelocity, percent);
-        RightDriveSmart.setVelocity(rightVelocity, percent);
-
-        // Spin the motors for the drift
-        LeftDriveSmart.spin(forward);
-        RightDriveSmart.spin(forward);
-
-        // Wait for a short duration before checking again
-        wait(5, msec);
+        
+        // Wait for a short duration before the next iteration
+        wait(10, msec);
     }
 }
