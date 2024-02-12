@@ -2,23 +2,24 @@ void driveStraightUntil(double targetDistance) {
     double kP = 0.1; // Proportional gain
     double minMotorSpeed = 20.0; // Minimum motor speed
     double maxMotorSpeed = 50.0; // Maximum motor speed
-    double initialHeading = DrivetrainInertial.heading(vex::rotationUnits::deg); // Initial heading
+    double deadZone = 0.5; // Dead zone around the target distance
     
     // Drive forward
     Drivetrain.driveFor(targetDistance, vex::distanceUnits::in, false);
     
     while (true) {
-        // Calculate current heading
-        double currentHeading = DrivetrainInertial.heading(vex::rotationUnits::deg);
-        
-        // Calculate change in heading
-        double headingChange = currentHeading - initialHeading;
-        
-        // Estimate distance traveled based on heading change
-        double distanceTraveled = (headingChange / 360.0) * (3.14 * wheelDiameter); // Assuming wheelDiameter is defined
+        // Calculate current distance traveled
+        double currentDistance = Drivetrain.distance(vex::distanceUnits::in);
         
         // Calculate distance error
-        double distanceError = targetDistance - distanceTraveled;
+        double distanceError = targetDistance - currentDistance;
+        
+        // Check if within the dead zone
+        if (fabs(distanceError) < deadZone) {
+            // Stop the robot and break out of the loop
+            Drivetrain.stop();
+            break;
+        }
         
         // Adjust motor speed based on distance error
         double motorSpeed = kP * distanceError;
@@ -31,13 +32,6 @@ void driveStraightUntil(double targetDistance) {
         // Set motor speeds
         LeftDriveSmart.setVelocity(motorSpeed, vex::velocityUnits::pct);
         RightDriveSmart.setVelocity(motorSpeed, vex::velocityUnits::pct);
-        
-        // Check if the target distance is reached
-        if (fabs(distanceError) < 0.1) {
-            // Stop the robot and break out of the loop
-            Drivetrain.stop();
-            break;
-        }
         
         // Wait for a short duration before the next iteration
         wait(10, msec);
