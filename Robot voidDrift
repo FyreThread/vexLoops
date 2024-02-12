@@ -1,9 +1,8 @@
-void driveStraightUntil(double targetDistance) {
+void driveStraightDistance(double targetDistance) {
     double kP = 0.1; // Proportional gain
     double minMotorSpeed = 20.0; // Minimum motor speed
     double maxMotorSpeed = 50.0; // Maximum motor speed
-    double positiveDeadZone = 0.1; // Positive dead zone around the target distance
-    double negativeDeadZone = -0.1; // Negative dead zone around the target distance
+    double deadzone = 0.5; // Dead zone around the target distance
     double initialHeading = DrivetrainInertial.heading(vex::rotationUnits::deg); // Initial heading
     
     // Drive forward
@@ -19,24 +18,27 @@ void driveStraightUntil(double targetDistance) {
         // Estimate distance traveled based on heading change
         double distanceTraveled = (headingChange / 360.0) * (3.14 * wheelDiameter); // Assuming wheelDiameter is defined
         
-        // Calculate distance error
-        double distanceError = targetDistance - distanceTraveled;
+        // Calculate remaining distance
+        double remainingDistance = targetDistance - distanceTraveled;
         
         // Check if within the dead zone
-        if (distanceError > negativeDeadZone && distanceError < positiveDeadZone) {
+        if (fabs(remainingDistance) < deadzone) {
             // Stop the robot and break out of the loop
+            Drivetrain.stop();
             break;
         }
         
-        // Adjust motor speed based on distance error
-        double motorSpeed = kP * distanceError;
-        if (motorSpeed < minMotorSpeed) {
+        // Adjust motor speed based on remaining distance
+        double motorSpeed;
+        if (remainingDistance > 0) {
+            // Speed up as the robot is further away
+            motorSpeed = minMotorSpeed + (maxMotorSpeed - minMotorSpeed) * (1.0 - fabs(remainingDistance) / targetDistance);
+        } else {
+            // Slow down as the robot approaches the target
             motorSpeed = minMotorSpeed;
-        } else if (motorSpeed > maxMotorSpeed) {
-            motorSpeed = maxMotorSpeed;
         }
         
-        // Set motor speeds
+        // Set motor speeds for driving straight
         LeftDriveSmart.setVelocity(motorSpeed, vex::velocityUnits::pct);
         RightDriveSmart.setVelocity(motorSpeed, vex::velocityUnits::pct);
         
