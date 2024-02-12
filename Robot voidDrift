@@ -1,5 +1,4 @@
 void driveStraightDistance(double targetDistance) {
-    double kP = 0.1; // Proportional gain
     double minMotorSpeed = 20.0; // Minimum motor speed
     double maxMotorSpeed = 50.0; // Maximum motor speed
     double deadzone = 0.5; // Dead zone around the target distance
@@ -28,14 +27,14 @@ void driveStraightDistance(double targetDistance) {
             break;
         }
         
-        // Adjust motor speed based on remaining distance
-        double motorSpeed;
-        if (remainingDistance > 0) {
-            // Speed up as the robot is further away
-            motorSpeed = minMotorSpeed + (maxMotorSpeed - minMotorSpeed) * (1.0 - fabs(remainingDistance) / targetDistance);
-        } else {
-            // Slow down as the robot approaches the target
+        // Calculate motor speed based on remaining distance
+        double motorSpeed = maxMotorSpeed * (remainingDistance / targetDistance);
+        
+        // Ensure motor speed stays within bounds
+        if (motorSpeed < minMotorSpeed) {
             motorSpeed = minMotorSpeed;
+        } else if (motorSpeed > maxMotorSpeed) {
+            motorSpeed = maxMotorSpeed;
         }
         
         // Set motor speeds for driving straight
