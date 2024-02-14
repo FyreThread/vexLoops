@@ -1,6 +1,4 @@
-#include "vex.h"
-
-using namespace vex;
+//By Gllitchh
 
 // Function to drift the robot over a set distance to a set heading
 void driftToHeading(double distance, double targetHeading) {
