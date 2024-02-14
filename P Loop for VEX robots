@@ -1,4 +1,4 @@
-//By Gllitchh aka Kaiden
+//By Gllitchh
 
 float ActualHeading, TargetHeading, error, MotorSpeed;
 
