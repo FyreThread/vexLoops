@@ -1,0 +1,60 @@
+// Function to drift a robot over a set distance to a set heading
+void driftToHeading(double distance, double targetHeading) {
+    // Constants for tuning drift behavior
+    double maxSpeed = 150.0; // Maximum motor speed
+    double minSpeed = 10.0;  // Minimum motor speed to maintain control
+    double turnFactor = 0.5; // Factor to adjust turn speed relative to forward speed
+    
+    // Calculate initial heading
+    double initialHeading = Inertial.rotation(degrees);
+    
+    // Calculate heading error
+    double headingError = targetHeading - initialHeading;
+    
+    // Determine direction of drift (left or right)
+    int driftDirection = (headingError > 0) ? 1 : -1;
+    
+    // Calculate arc radius (for simplicity, assuming constant radius)
+    double arcRadius = distance / (2 * sin(headingError * (M_PI / 360)));
+    
+    // Calculate speed for outer wheels to maintain arc
+    double outerSpeed = maxSpeed * (arcRadius + 10) / (arcRadius + 5); // Adding a buffer to prevent slipping
+    
+    // Set motor speeds to initiate drift
+    FrontLeftMotor.setVelocity(outerSpeed * driftDirection, percent);
+    BackLeftMotor.setVelocity(outerSpeed * driftDirection, percent);
+    FrontRightMotor.setVelocity(maxSpeed * driftDirection, percent);
+    BackRightMotor.setVelocity(maxSpeed * driftDirection, percent);
+    
+    // Start motors
+    FrontLeftMotor.spin(forward);
+    BackLeftMotor.spin(forward);
+    FrontRightMotor.spin(forward);
+    BackRightMotor.spin(forward);
+    
+    // Monitor heading during drift and adjust turn speed
+    while (fabs(headingError) > 1) { // Adjust tolerance as needed
+        // Update heading error
+        initialHeading = Inertial.rotation(degrees);
+        headingError = targetHeading - initialHeading;
+        
+        // Adjust turn speed relative to forward speed
+        double turnSpeed = maxSpeed * turnFactor * (headingError / 90);
+        
+        // Ensure minimum speed to maintain control
+        turnSpeed = (turnSpeed > minSpeed) ? turnSpeed : minSpeed;
+        
+        // Update motor speeds
+        FrontRightMotor.setVelocity((maxSpeed - turnSpeed) * driftDirection, percent);
+        BackRightMotor.setVelocity((maxSpeed - turnSpeed) * driftDirection, percent);
+        
+        // Sleep for a short duration before next iteration
+        this_thread::sleep_for(20);
+    }
+    
+    // Stop motors at the end of drift
+    FrontLeftMotor.stop();
+    BackLeftMotor.stop();
+    FrontRightMotor.stop();
+    BackRightMotor.stop();
+}
