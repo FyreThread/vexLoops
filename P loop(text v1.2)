@@ -1,111 +1,66 @@
-void turnLeftDegrees(double targetDegrees) {
-  double kP = 0.1;
-  int deadzone = 2;
-  double minMotorSpeed = 5.0;
+// Constants
+const double kProportionalGain = 0.1;
+const int kDeadzone = 2;
+const double kMinMotorSpeed = 5.0;
 
-  double initialHeading = Drivetrain.heading();
-  double currentHeading = initialHeading;
-  double targetHeading = initialHeading - targetDegrees;
+// Function for turning by a specified number of degrees (both left and right turns)
+void turnDegrees(double targetDegrees, bool isLeftTurn) {
+  // Reset heading before each turn
+  Drivetrain.setHeading(0.0, degrees);
 
-  // Ensure targetHeading is within the range [0, 360)
+  // Calculate target heading
+  double targetHeading = isLeftTurn ? (Drivetrain.heading() - targetDegrees) : (Drivetrain.heading() + targetDegrees);
   if (targetHeading < 0) {
     targetHeading += 360.0;
   } else if (targetHeading >= 360.0) {
     targetHeading -= 360.0;
   }
 
+  // Turn until target heading is reached
   while (true) {
-    double error = targetHeading - currentHeading;
-    
+    // Calculate error
+    double error = targetHeading - Drivetrain.heading();
     if (error < -180.0) {
       error += 360.0;
     } else if (error >= 180.0) {
       error -= 360.0;
     }
 
-    if (fabs(error) < deadzone) {
+    // Apply dead zone
+    if (fabs(error) < kDeadzone) {
       error = 0.0;
     }
     
-    double motorSpeed = error * kP;
+    // Calculate motor speed based on error
+    double motorSpeed = error * kProportionalGain;
     motorSpeed *= fabs(error / targetDegrees);
 
-    if (fabs(motorSpeed) < minMotorSpeed) {
-      motorSpeed = copysign(minMotorSpeed, motorSpeed);
+    // Ensure minimum motor speed is maintained
+    if (fabs(motorSpeed) < kMinMotorSpeed) {
+      motorSpeed = copysign(kMinMotorSpeed, motorSpeed);
     }
 
-    LeftDriveSmart.setVelocity(motorSpeed, percent);
-    RightDriveSmart.setVelocity(-motorSpeed, percent);
+    // Set motor speeds
+    double leftMotorSpeed = isLeftTurn ? motorSpeed : -motorSpeed;
+    double rightMotorSpeed = isLeftTurn ? -motorSpeed : motorSpeed;
+    LeftDriveSmart.setVelocity(leftMotorSpeed, percent);
+    RightDriveSmart.setVelocity(rightMotorSpeed, percent);
 
+    // Spin motors
     LeftDriveSmart.spin(forward);
     RightDriveSmart.spin(forward);
 
-    currentHeading = Drivetrain.heading();
-
-    if (fabs(error) < 2.0) {
-      Drivetrain.setDriveVelocity(150.0, percent);
-      Drivetrain.stop();
-      break;
-    }
-    
-    wait(5, msec);
-  }
-
-  Drivetrain.stop();
-}
-
-void turnRightDegrees(double targetDegrees) {
-  double kP = 0.1;
-  int deadzone = 2;
-  double minMotorSpeed = 5.0;
-
-  double initialHeading = Drivetrain.heading();
-  double currentHeading = initialHeading;
-  double targetHeading = initialHeading + targetDegrees;
-
-  // Ensure targetHeading is within the range [0, 360)
-  if (targetHeading < 0) {
-    targetHeading += 360.0;
-  } else if (targetHeading >= 360.0) {
-    targetHeading -= 360.0;
-  }
-
-  while (true) {
-    double error = targetHeading - currentHeading;
-    
-    if (error < -180.0) {
-      error += 360.0;
-    } else if (error >= 180.0) {
-      error -= 360.0;
-    }
-
-    if (fabs(error) < deadzone) {
-      error = 0.0;
-    }
-    
-    double motorSpeed = error * kP;
-    motorSpeed *= fabs(error / targetDegrees);
-
-    if (fabs(motorSpeed) < minMotorSpeed) {
-      motorSpeed = copysign(minMotorSpeed, motorSpeed);
-    }
-
-    LeftDriveSmart.setVelocity(motorSpeed, percent);
-    RightDriveSmart.setVelocity(-motorSpeed, percent);
-
-    LeftDriveSmart.spin(forward);
-    RightDriveSmart.spin(forward);
-
-    currentHeading = Drivetrain.heading();
-
+    // Break loop if target heading is reached
     if (fabs(error) < 2.0) {
       Drivetrain.stop();
       Drivetrain.setDriveVelocity(150.0, percent);
       break;
     }
     
+    // Wait for short duration
     wait(5, msec);
   }
 
+  // Stop the drivetrain
   Drivetrain.stop();
 }
