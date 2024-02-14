@@ -1,1 +1,98 @@
 //Undere Dev
+
+// Function to perform a turn with self-correction
+void performTurn(double targetHeading, double kP, int deadzone, double minMotorSpeed) {
+  while (true) {
+    // Calculate error
+    double error = targetHeading - Drivetrain.heading();
+    
+    // Ensure error is within the range [-180, 180)
+    if (error < -180.0) {
+      error += 360.0;
+    } else if (error >= 180.0) {
+      error -= 360.0;
+    }
+
+    // Apply dead zone
+    if (fabs(error) < deadzone) {
+      error = 0.0;
+    }
+    
+    // Calculate motor speed based on error
+    double motorSpeed = error * kP;
+
+    // Decrease motor speed as error decreases
+    motorSpeed *= fabs(error / targetHeading);
+
+    if (fabs(motorSpeed) < minMotorSpeed) {
+      motorSpeed = copysign(minMotorSpeed, motorSpeed);
+    }
+
+    // Set the motor speeds
+    LeftDriveSmart.setVelocity(motorSpeed, percent);
+    RightDriveSmart.setVelocity(-motorSpeed, percent); // Reverse the direction
+
+    // Spin the motors
+    LeftDriveSmart.spin(forward);
+    RightDriveSmart.spin(forward);
+
+    // Break the loop if the error is within the deadzone
+    if (fabs(error) < deadzone) {
+      Drivetrain.stop();
+      break;
+    }
+    
+    // Wait for a short duration
+    wait(5, msec);
+  }
+}
+
+// Function to perform a left turn with self-correction
+void turnLeftDegrees(double targetDegrees) {
+  // Proportional gain (Turn too much, make smaller, Turn too little, make bigger)
+  double kP = 0.1; // Adjust as needed
+
+  // Dead zone for the loop
+  int deadzone = 2;
+
+  // The slowest speed the loop will start with  
+  double minMotorSpeed = 5.0; // Adjust as needed
+
+  // Calculate target heading
+  double targetHeading = Drivetrain.heading() - targetDegrees;
+
+  // Ensure targetHeading is within the range [0, 360)
+  if (targetHeading < 0) {
+    targetHeading += 360.0;
+  } else if (targetHeading >= 360.0) {
+    targetHeading -= 360.0;
+  }
+
+  // Perform turn with self-correction
+  performTurn(targetHeading, kP, deadzone, minMotorSpeed);
+}
+
+// Function to perform a right turn with self-correction
+void turnRightDegrees(double targetDegrees) {
+  // Proportional gain (Turn too much, make smaller, Turn too little, make bigger)
+  double kP = 0.1; // Adjust as needed
+
+  // Dead zone for the loop
+  int deadzone = 2;
+
+  // The slowest speed the loop will start with  
+  double minMotorSpeed = 5.0; // Adjust as needed
+
+  // Calculate target heading
+  double targetHeading = Drivetrain.heading() + targetDegrees;
+
+  // Ensure targetHeading is within the range [0, 360)
+  if (targetHeading < 0) {
+    targetHeading += 360.0;
+  } else if (targetHeading >= 360.0) {
+    targetHeading -= 360.0;
+  }
+
+  // Perform turn with self-correction
+  performTurn(targetHeading, kP, deadzone, minMotorSpeed);
+}
