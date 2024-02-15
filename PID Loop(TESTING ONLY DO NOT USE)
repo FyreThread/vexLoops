@@ -1,75 +1,92 @@
-// PID tuning parameters
-double kP = 0.1;   // Proportional gain
-double kI = 0.01;  // Integral gain
-double kD = 0.05;  // Derivative gain
+// Define the clamp function to constrain a value within a specified range
+double clamp(double value, double min, double max) {
+    return (value < min) ? min : (value > max) ? max : value;
+}
 
-// Anti-windup parameters
-double integralMin = -100;  // Minimum integral value
-double integralMax = 100;   // Maximum integral value
+// Constants for PID control
+const double kP = 0.1;   // Proportional gain
+const double kI = 0.01;  // Integral gain
+const double kD = 0.05;  // Derivative gain
+const int kDeadzone = 2; // Deadzone for error
+const double kMinMotorSpeed = 5.0; // Minimum motor speed to prevent stalling
 
 // Function for turning to a specified target heading with PID control
-void turnToHeading(double targetHeading, double kp, double ki, double kd) {
-  double integral = 0;   // Integral term for PID control
-  double prevError = 0;  // Previous error for calculating derivative term
+void turnToHeading(double targetHeading) {
+    double integral = 0;   // Integral term for PID control
+    double prevError = 0;  // Previous error for calculating derivative term
 
-  // Reset heading before each turn
-  Drivetrain.setHeading(0.0, degrees);
+    // Reset heading before each turn
+    Drivetrain.setHeading(0.0, degrees);
 
-  // Turn until target heading is reached
-  while (true) {
-    // Calculate error: the difference between target heading and current heading
-    double currentHeading = Drivetrain.heading();
-    double error = targetHeading - currentHeading;
+    // Turn until target heading is reached
+    while (true) {
+        // Calculate error: the difference between target heading and current heading
+        double currentHeading = Drivetrain.heading();
+        double error = targetHeading - currentHeading;
 
-    // Ensure error is within the range [-180, 180)
-    if (error < -180.0) {
-      error += 360.0;
-    } else if (error >= 180.0) {
-      error -= 360.0;
+        // Ensure error is within the range [-180, 180)
+        if (error < -180.0) {
+            error += 360.0;
+        } else if (error >= 180.0) {
+            error -= 360.0;
+        }
+
+        // Apply dead zone
+        if (fabs(error) < kDeadzone) {
+            error = 0.0;
+        }
+
+        // Update integral term with anti-windup
+        integral += error;
+        integral = clamp(integral, -100.0, 100.0); // Adjust range as needed
+
+        // Calculate derivative term to anticipate future error changes
+        double derivative = error - prevError;
+        prevError = error;
+
+        // Calculate motor speed based on PID control equation
+        double motorSpeed = (kP * error) + (kI * integral) + (kD * derivative);
+
+        // Ensure minimum motor speed is maintained to prevent stalling
+        if (fabs(motorSpeed) < kMinMotorSpeed) {
+            motorSpeed = copysign(kMinMotorSpeed, motorSpeed);
+        }
+
+        // Set motor speeds for turning
+        double leftMotorSpeed = motorSpeed; // Adjust as needed for your specific robot
+        double rightMotorSpeed = -motorSpeed; // Reverse direction for right turn
+        LeftDriveSmart.setVelocity(leftMotorSpeed, percent);
+        RightDriveSmart.setVelocity(rightMotorSpeed, percent);
+
+        // Spin motors
+        LeftDriveSmart.spin(forward);
+        RightDriveSmart.spin(forward);
+
+        // Break loop if target heading is reached or if motor speed becomes very small
+        if (fabs(error) < 2.0 || fabs(motorSpeed) < 0.1) {
+            Drivetrain.stop();
+            Drivetrain.setDriveVelocity(150.0, percent); // Set a drive velocity after turning
+            break;
+        }
+
+        // Update PID gains based on closed-loop system identification
+        updatePIDGains();
+
+        // Wait for a short duration before the next iteration
+        wait(5, msec);
     }
 
-    // Apply dead zone
-    if (fabs(error) < kDeadzone) {
-      error = 0.0;
-    }
+    // Stop the drivetrain after reaching the target heading
+    Drivetrain.stop();
+}
 
-    // Update integral term with anti-windup
-    integral += error;
-    integral = clamp(integral, integralMin, integralMax);
-
-    // Calculate derivative term to anticipate future error changes
-    double derivative = error - prevError;
-    prevError = error;
-
-    // Calculate motor speed based on PID control equation
-    double motorSpeed = (kp * error) + (ki * integral) + (kd * derivative);
-
-    // Ensure minimum motor speed is maintained to prevent stalling
-    if (fabs(motorSpeed) < kMinMotorSpeed) {
-      motorSpeed = copysign(kMinMotorSpeed, motorSpeed);
-    }
-
-    // Set motor speeds for turning
-    double leftMotorSpeed = motorSpeed; // Adjust as needed for your specific robot
-    double rightMotorSpeed = -motorSpeed; // Reverse direction for right turn
-    LeftDriveSmart.setVelocity(leftMotorSpeed, percent);
-    RightDriveSmart.setVelocity(rightMotorSpeed, percent);
-
-    // Spin motors
-    LeftDriveSmart.spin(forward);
-    RightDriveSmart.spin(forward);
-
-    // Break loop if target heading is reached or if motor speed becomes very small
-    if (fabs(error) < 2.0 || fabs(motorSpeed) < 0.1) {
-      Drivetrain.stop();
-      Drivetrain.setDriveVelocity(150.0, percent); // Set a drive velocity after turning
-      break;
-    }
-    
-    // Wait for a short duration before the next iteration
-    wait(5, msec);
-  }
-
-  // Stop the drivetrain after reaching the target heading
-  Drivetrain.stop();
+// Function to update PID gains based on closed-loop system identification
+void updatePIDGains() {
+    // Perform closed-loop system identification and adjust PID gains accordingly
+    // Example: Measure performance metrics (e.g., overshoot, settling time) and adjust gains
+    // kP, kI, and kD = new values based on identified system characteristics
+    // For simplicity, we'll use fixed values here, but in practice, you would calculate them dynamically
+    kP = 0.2; // New proportional gain
+    kI = 0.02; // New integral gain
+    kD = 0.1; // New derivative gain
 }
