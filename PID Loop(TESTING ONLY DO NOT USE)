@@ -1,29 +1,45 @@
-// Define the clamp function to constrain a value within a specified range
-double clamp(double value, double min, double max) {
-    return (value < min) ? min : (value > max) ? max : value;
-}
-
 // Constants for PID control
-const double kP = 0.1;   // Proportional gain
-const double kI = 0.01;  // Integral gain
-const double kD = 0.05;  // Derivative gain
+double kP = 0.1;   // Proportional gain
+double kI = 0.01;  // Integral gain
+double kD = 0.05;  // Derivative gain
 const int kDeadzone = 2; // Deadzone for error
 const double kMinMotorSpeed = 5.0; // Minimum motor speed to prevent stalling
 
-// Function for turning to a specified target heading with PID control
-void turnToHeading(double targetHeading) {
-    double integral = 0;   // Integral term for PID control
-    double prevError = 0;  // Previous error for calculating derivative term
+// Variables for integral control
+double integral = 0.0;
+const double kMaxIntegral = 100.0; // Maximum allowable integral term
+const double kIntegralThreshold = 0.1; // Threshold to prevent small errors from accumulating in the integral term
 
+// Robot dimensions
+const double robotWidth = 14.0;  // inches
+const double robotLength = 15.0; // inches
+
+// Maximum linear velocity of the robot (assuming the same diameter for all wheels)
+const double maxLinearVelocity = (M_PI * 2.75 * 600.0) / (12.0 * 60.0); // inches/second
+
+// Function to turn left smoothly and consistently using PID control
+void turnLeft(double targetDegrees) {
     // Reset heading before each turn
     Drivetrain.setHeading(0.0, degrees);
 
-    // Turn until target heading is reached
-    while (true) {
-        // Calculate error: the difference between target heading and current heading
-        double currentHeading = Drivetrain.heading();
-        double error = targetHeading - currentHeading;
+    // Calculate target heading
+    double targetHeading = Drivetrain.heading() - targetDegrees;
 
+    // Ensure target heading is within the range [0, 360)
+    if (targetHeading < 0) {
+        targetHeading += 360.0;
+    } else if (targetHeading >= 360.0) {
+        targetHeading -= 360.0;
+    }
+
+    // Initialize variables for PID control
+    double previousError = 0.0;
+
+    // Turn left until the target heading is reached
+    while (true) {
+        // Calculate error
+        double error = targetHeading - Drivetrain.heading();
+        
         // Ensure error is within the range [-180, 180)
         if (error < -180.0) {
             error += 360.0;
@@ -35,58 +51,54 @@ void turnToHeading(double targetHeading) {
         if (fabs(error) < kDeadzone) {
             error = 0.0;
         }
-
-        // Update integral term with anti-windup
+        
+        // Integral control
         integral += error;
-        integral = clamp(integral, -100.0, 100.0); // Adjust range as needed
+        if (fabs(error) < kIntegralThreshold) {
+            integral = 0.0; // Prevent small errors from accumulating
+        }
+        integral = clamp(integral, -kMaxIntegral, kMaxIntegral);
 
-        // Calculate derivative term to anticipate future error changes
-        double derivative = error - prevError;
-        prevError = error;
+        // Derivative control
+        double derivative = error - previousError;
 
-        // Calculate motor speed based on PID control equation
-        double motorSpeed = (kP * error) + (kI * integral) + (kD * derivative);
+        // Calculate motor speed based on PID terms
+        double motorSpeed = kP * error + kI * integral + kD * derivative;
 
-        // Ensure minimum motor speed is maintained to prevent stalling
+        // Decrease motor speed as error decreases
+        motorSpeed *= fabs(error / targetDegrees);
+
+        // Ensure motor speed doesn't fall below minimum threshold
         if (fabs(motorSpeed) < kMinMotorSpeed) {
             motorSpeed = copysign(kMinMotorSpeed, motorSpeed);
         }
 
-        // Set motor speeds for turning
-        double leftMotorSpeed = motorSpeed; // Adjust as needed for your specific robot
-        double rightMotorSpeed = -motorSpeed; // Reverse direction for right turn
-        LeftDriveSmart.setVelocity(leftMotorSpeed, percent);
-        RightDriveSmart.setVelocity(rightMotorSpeed, percent);
+        // Calculate motor velocities based on linear velocity and robot dimensions
+        double leftMotorVelocity = -maxLinearVelocity;
+        double rightMotorVelocity = maxLinearVelocity;
+
+        // Set motor velocities for left turn
+        LeftDriveSmart.setVelocity(leftMotorVelocity, percent);
+        RightDriveSmart.setVelocity(rightMotorVelocity, percent);
 
         // Spin motors
         LeftDriveSmart.spin(forward);
         RightDriveSmart.spin(forward);
 
-        // Break loop if target heading is reached or if motor speed becomes very small
-        if (fabs(error) < 2.0 || fabs(motorSpeed) < 0.1) {
+        // Update previous error
+        previousError = error;
+
+        // Break the loop if the target heading is reached
+        if (fabs(error) < 2.0) {
+            Drivetrain.setDriveVelocity(150.0, percent);
             Drivetrain.stop();
-            Drivetrain.setDriveVelocity(150.0, percent); // Set a drive velocity after turning
             break;
         }
-
-        // Update PID gains based on closed-loop system identification
-        updatePIDGains();
-
-        // Wait for a short duration before the next iteration
+        
+        // Wait for a short duration
         wait(5, msec);
     }
 
     // Stop the drivetrain after reaching the target heading
     Drivetrain.stop();
-}
-
-// Function to update PID gains based on closed-loop system identification
-void updatePIDGains() {
-    // Perform closed-loop system identification and adjust PID gains accordingly
-    // Example: Measure performance metrics (e.g., overshoot, settling time) and adjust gains
-    // kP, kI, and kD = new values based on identified system characteristics
-    // For simplicity, we'll use fixed values here, but in practice, you would calculate them dynamically
-    kP = 0.2; // New proportional gain
-    kI = 0.02; // New integral gain
-    kD = 0.1; // New derivative gain
 }
