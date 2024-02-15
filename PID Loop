@@ -1,0 +1,75 @@
+// PID tuning parameters
+double kP = 0.1;   // Proportional gain
+double kI = 0.01;  // Integral gain
+double kD = 0.05;  // Derivative gain
+
+// Anti-windup parameters
+double integralMin = -100;  // Minimum integral value
+double integralMax = 100;   // Maximum integral value
+
+// Function for turning to a specified target heading with PID control
+void turnToHeading(double targetHeading, double kp, double ki, double kd) {
+  double integral = 0;   // Integral term for PID control
+  double prevError = 0;  // Previous error for calculating derivative term
+
+  // Reset heading before each turn
+  Drivetrain.setHeading(0.0, degrees);
+
+  // Turn until target heading is reached
+  while (true) {
+    // Calculate error: the difference between target heading and current heading
+    double currentHeading = Drivetrain.heading();
+    double error = targetHeading - currentHeading;
+
+    // Ensure error is within the range [-180, 180)
+    if (error < -180.0) {
+      error += 360.0;
+    } else if (error >= 180.0) {
+      error -= 360.0;
+    }
+
+    // Apply dead zone
+    if (fabs(error) < kDeadzone) {
+      error = 0.0;
+    }
+
+    // Update integral term with anti-windup
+    integral += error;
+    integral = clamp(integral, integralMin, integralMax);
+
+    // Calculate derivative term to anticipate future error changes
+    double derivative = error - prevError;
+    prevError = error;
+
+    // Calculate motor speed based on PID control equation
+    double motorSpeed = (kp * error) + (ki * integral) + (kd * derivative);
+
+    // Ensure minimum motor speed is maintained to prevent stalling
+    if (fabs(motorSpeed) < kMinMotorSpeed) {
+      motorSpeed = copysign(kMinMotorSpeed, motorSpeed);
+    }
+
+    // Set motor speeds for turning
+    double leftMotorSpeed = motorSpeed; // Adjust as needed for your specific robot
+    double rightMotorSpeed = -motorSpeed; // Reverse direction for right turn
+    LeftDriveSmart.setVelocity(leftMotorSpeed, percent);
+    RightDriveSmart.setVelocity(rightMotorSpeed, percent);
+
+    // Spin motors
+    LeftDriveSmart.spin(forward);
+    RightDriveSmart.spin(forward);
+
+    // Break loop if target heading is reached or if motor speed becomes very small
+    if (fabs(error) < 2.0 || fabs(motorSpeed) < 0.1) {
+      Drivetrain.stop();
+      Drivetrain.setDriveVelocity(150.0, percent); // Set a drive velocity after turning
+      break;
+    }
+    
+    // Wait for a short duration before the next iteration
+    wait(5, msec);
+  }
+
+  // Stop the drivetrain after reaching the target heading
+  Drivetrain.stop();
+}
