@@ -1,13 +1,12 @@
 //NOT MINE, I TAKE NO CREDIT FOR ANY OF THE CODE IN THIS FILE:
-
+// But I do. Made By FyreThread
 void driveStraightFor(double travelDist) {
-    double drivetrainLeftSideSpeed;
-    double drivetrainRightSideSpeed;
-    double deadzone = .95;                                  // Deadzone value between 0 and 1
-    double kP = .443;                                         // Adjust later, changes degrees of error to a decimal
+    double drivetrainLeftSideSpeed, drivetrainRightSideSpeed;
+    double deadzone = .95;                                  // Deadzone value between 0 and 1, closer to 1 is more precisely straight
+    double kP = .443;                                       // Adjust later, changes degrees of error to a decimal, higher is faster
     double mod = 2;                                         // Adjust later, keeps drivetrain at reasonable speed
     DrivetrainInertial.setHeading(90, degrees);             // Prevents rolling over to 359
-    double CurrentVelocity = Drivetrain.velocity(percent);
+    double currentVelocity = Drivetrain.velocity(percent);
     Drivetrain.driveFor(travelDist, inches, false);
     while(!Drivetrain.isDone()){
         if (DrivetrainInertial.heading(degrees) > (90 * deadzone))
@@ -18,13 +17,13 @@ void driveStraightFor(double travelDist) {
         }
         else if (DrivetrainInertial.heading(degrees) < (90 * deadzone))
         {
-            drivetrainRightSideSpeed = (((90 - DrivetrainInertial.heading(degrees)) * kP) * mod);                  // (93 - 90) * .1 = .3 * 2 = .6         // .6 * 100 = 60
+            drivetrainRightSideSpeed = (((90 - DrivetrainInertial.heading(degrees)) * kP) * mod);                  // (90 - 87) * .1 = .3 * 2 = .6         // .6 * 100 = 60
             RightDriveSmart.setVelocity(drivetrainRightSideSpeed, percent);
             std::cout << "Right Speed: " << RightDriveSmart.velocity(percent) << std::endl;
         }
-        else{
-            LeftDriveSmart.setVelocity(CurrentVelocity, percent);
-            RightDriveSmart.setVelocity(CurrentVelocity, percent);
+        else {
+            LeftDriveSmart.setVelocity(currentVelocity, percent);
+            RightDriveSmart.setVelocity(currentVelocity, percent);
         }
         this_thread::sleep_for(10);
     }
