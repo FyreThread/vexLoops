@@ -1,4 +1,4 @@
-Loops forVEX Robotics
+Loops for VEX Robotics
 
 Overview:
 This repository contains implementations of P loops and PID loops for VEX Robotics.
