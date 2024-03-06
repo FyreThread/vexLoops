@@ -11,4 +11,4 @@ Contributing:
 Contributions to this repository are welcome. If you have any improvements, bug fixes, or additional features to propose, feel free to submit a pull request.
 
 Acknowledgments:
-This project was inspiered by the loss of 9144E's PID Loop from VEX VRC Spin Up.
+This project was inspired by the loss of 9144E's PID Loop from VEX VRC Spin Up.
