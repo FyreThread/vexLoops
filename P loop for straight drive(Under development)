@@ -1,5 +1,4 @@
-//NOT MINE, I TAKE NO CREDIT FOR ANY OF THE CODE IN THIS FILE:
-// But I do. Made By FyreThread
+// Made By FyreThread
 void driveStraightFor(double travelDist) {
     double drivetrainLeftSideSpeed, drivetrainRightSideSpeed;
     double deadzone = .95;                                  // Deadzone value between 0 and 1, closer to 1 is more precisely straight
