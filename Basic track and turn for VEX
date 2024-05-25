@@ -1,6 +1,6 @@
 // by Gllitchh
 void turnToTarget() {
-  double kP = 0.100;  // Proportional gain
+  double kP = 0.210;  // Proportional gain
   double minMotorSpeed = 5.0;
   int deadzone = 2;  // Dead zone to stop the robot when close to the target
   int VISION_FOV_WIDTH = 316;  // Width of the Vision Sensor's field of view in pixels
@@ -9,11 +9,20 @@ void turnToTarget() {
     Vision1.takeSnapshot(Vision1__SIG_1);
 
     if (Vision1.objectCount > 0) {
-      // Get the largest detected object
-      vision::object targetObject = Vision1.largestObject;
+      // Find the largest detected object
+      vision::object largestObject;
+      int maxWidth = 0;
+
+      for (int i = 0; i < Vision1.objectCount; i++) {
+        vision::object obj = Vision1.objects[i];
+        if (obj.width > maxWidth) {
+          largestObject = obj;
+          maxWidth = obj.width;
+        }
+      }
 
       // Calculate the error based on the object's position relative to the center of the field of view
-      double error = targetObject.centerX - (VISION_FOV_WIDTH / 2);
+      double error = largestObject.centerX - (VISION_FOV_WIDTH / 2);
 
       // Ensure error is within the range [-VISION_FOV_WIDTH/2, VISION_FOV_WIDTH/2]
       if (error < -VISION_FOV_WIDTH / 2) {
