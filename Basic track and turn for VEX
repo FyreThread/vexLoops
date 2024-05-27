@@ -9,7 +9,7 @@ void turnToTarget() {
     Vision1.takeSnapshot(Vision1__SIG_1);
 
     if (Vision1.objectCount > 0) {
-      // Find the largest detected object
+      // Find the largest detected object(the closest, but the closer an object the bigger it is)
       vision::object largestObject;
       int maxWidth = 0;
 
