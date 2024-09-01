@@ -1,0 +1,142 @@
+#pragma region VEXcode Generated Robot Configuration
+// Make sure all required headers are included.
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <math.h>
+#include <string.h>
+
+#include "vex.h"
+
+using namespace vex;
+
+// Brain should be defined by default
+brain Brain;
+
+// START V5 MACROS
+#define waitUntil(condition)                                                   \
+  do {                                                                         \
+    wait(5, msec);                                                             \
+  } while (!(condition))
+
+#define repeat(iterations)                                                     \
+  for (int iterator = 0; iterator < iterations; iterator++)
+// END V5 MACROS
+
+// Robot configuration code.
+motor LeftDriveSmart = motor(PORT11, ratio18_1, false);
+motor RightDriveSmart = motor(PORT15, ratio18_1, true);
+inertial DrivetrainInertial = inertial(PORT21);
+
+// Generating and setting random seed
+void initializeRandomSeed(){
+  int systemTime = Brain.Timer.systemHighResolution();
+  double batteryCurrent = Brain.Battery.current();
+  double batteryVoltage = Brain.Battery.voltage(voltageUnits::mV);
+
+  // Combine these values into a single integer
+  int seed = int(batteryVoltage + batteryCurrent * 100) + systemTime;
+
+  // Set the seed
+  srand(seed);
+}
+
+bool vexcode_initial_drivetrain_calibration_completed = false;
+void calibrateDrivetrain() {
+  wait(200, msec);
+  Brain.Screen.print("Calibrating");
+  Brain.Screen.newLine();
+  Brain.Screen.print("Inertial");
+  DrivetrainInertial.calibrate();
+  while (DrivetrainInertial.isCalibrating()) {
+    wait(25, msec);
+  }
+  vexcode_initial_drivetrain_calibration_completed = true;
+  // Clears the screen and returns the cursor to row 1, column 1.
+  Brain.Screen.clearScreen();
+  Brain.Screen.setCursor(1, 1);
+}
+
+void vexcodeInit() {
+  // Calibrate the Drivetrain
+  calibrateDrivetrain();
+
+  // Initializing random seed.
+  initializeRandomSeed(); 
+}
+
+// Helper to make playing sounds from the V5 in VEXcode easier and
+// keeps the code cleaner by making it clear what is happening.
+void playVexcodeSound(const char *soundName) {
+  printf("VEXPlaySound:%s\n", soundName);
+  wait(5, msec);
+}
+
+#pragma endregion VEXcode Generated Robot Configuration
+
+// Include the V5 Library
+#include "vex.h"
+  
+// Allows for easier use of the VEX Library
+using namespace vex;
+
+const double wheelCircumferenceInches = 200.0 / 25.4; // Convert 200mm to inches
+const double maxSpeed = 200.0;
+const double minSpeed = 20.0;
+const double kP = 1.5;  // Proportional gain: start speed
+const double kD = 0.3;  // Derivative gain: dampen 
+const double kI = 0.05;  // Integral gain: constet errors
+const double acceptableRange = 0.05; // Acceptable error in inches
+
+// Function to drive to a set distance using PID control
+void driveToDistance(double targetDistanceInches) {
+    LeftDriveSmart.resetPosition();
+    RightDriveSmart.resetPosition();
+
+    double integral = 0;  // Initialize integral term
+    double prevError = 0;
+
+    while (true) {
+        double currentDistanceL = LeftDriveSmart.position(rotationUnits::deg) / 360.0 * wheelCircumferenceInches;
+        double currentDistanceR = RightDriveSmart.position(rotationUnits::deg) / 360.0 * wheelCircumferenceInches;
+        double currentDistance = (currentDistanceL + currentDistanceR) / 2;
+        
+        double error = targetDistanceInches - currentDistance;
+        integral += error;
+        double derivative = error - prevError;
+
+        double motorSpeed = kP * error + kD * derivative + kI * integral;
+        motorSpeed = fmin(maxSpeed, fmax(minSpeed, motorSpeed));
+
+        if (fabs(error) > acceptableRange) {
+            if (error > 0) {
+                LeftDriveSmart.spin(forward, motorSpeed, velocityUnits::pct);
+                RightDriveSmart.spin(forward, motorSpeed, velocityUnits::pct);
+            } else {
+                LeftDriveSmart.spin(reverse, motorSpeed, velocityUnits::pct);
+                RightDriveSmart.spin(reverse, motorSpeed, velocityUnits::pct);
+            }
+        } else {
+            LeftDriveSmart.stop();
+            RightDriveSmart.stop();
+            break;
+        }
+
+        prevError = error;
+        vex::task::sleep(20); 
+    }
+}
+
+// "when started" hat block
+int whenStarted1() {
+  double targetDistance = 10.0; // target distance in inches
+  driveToDistance(targetDistance);
+  return 0;
+}
+
+int main() {
+  // Initializing Robot Configuration. DO NOT REMOVE!
+  vexcodeInit();
+
+  whenStarted1();
+}
